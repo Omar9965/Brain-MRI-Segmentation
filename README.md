@@ -144,7 +144,7 @@ curl -X POST \
 
 ## Troubleshooting
 
-- Missing weights: Ensure `best_model.pth` exists in `src/models/Model/`
+- Missing weights: Ensure `best_model.pth` exists in `src/models/Model/` you can download it from here "https://www.kaggle.com/code/omarmohamed89/brain-mri/output"
 - 500 errors on upload: Check file type/size and server logs
 - Images not visible: Confirm `/output` is mounted and URLs resolve
 - CUDA issues: App will automatically fall back to CPU
@@ -155,5 +155,4 @@ curl -X POST \
 
 - This repo includes a project-specific venv folder (`mri/`) for convenience; you may use your own environment instead.
 - The included Jupyter notebook for training is at `src/Notebook/brain-mri.ipynb` (dataset and training code reference).
-# Brain-MRI-Segmentation
 # Brain-MRI-Segmentation

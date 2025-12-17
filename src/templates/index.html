@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain MRI Tumor Segmentation - AI Medical Imaging</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🧠 Brain MRI Tumor Segmentation</h1>
+            <p class="subtitle">AI-powered U-Net segmentation for detecting brain tumors in MRI scans</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">🩻</div>
+                <div class="upload-text">Click to upload or drag and drop</div>
+                <div class="upload-subtext">Supports: JPG, PNG, JPEG, TIFF • Max 500MB • Multiple files allowed</div>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.tiff,.tif" multiple />
+            </div>
+
+            <div class="selected-files hidden" id="selectedFiles">
+                <h4>Selected Files:</h4>
+                <ul id="fileList"></ul>
+            </div>
+
+            <div class="message error" id="errorMsg"></div>
+            <div class="message success" id="successMsg"></div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing your MRI scans... Detecting tumors</p>
+            </div>
+
+            <div class="buttons-container hidden" id="buttonsContainer">
+                <button class="btn btn-primary" id="processBtn">
+                    <span>🔬</span> Analyze MRI
+                </button>
+                <button class="btn btn-secondary" id="resetBtn">
+                    <span>🔃</span> Upload New
+                </button>
+            </div>
+        </div>
+
+        <div class="results-container hidden" id="imagesContainer">
+            <h2 class="results-title">Segmentation Results</h2>
+            <div id="resultsGrid" class="results-grid"></div>
+        </div>
+
+        <footer class="footer">
+            <p>Powered by U-Net with CBAM Attention</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

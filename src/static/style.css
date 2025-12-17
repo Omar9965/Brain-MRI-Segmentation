@@ -1,0 +1,385 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 40px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+h1 {
+    color: #1a365d;
+    font-size: 2.5em;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #718096;
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+.upload-section {
+    max-width: 800px;
+    margin: 0 auto 40px;
+}
+
+.upload-area {
+    border: 3px dashed #3182ce;
+    border-radius: 15px;
+    padding: 60px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #ebf8ff;
+    margin-bottom: 20px;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: #2b6cb0;
+    background: #bee3f8;
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+}
+
+.upload-text {
+    font-size: 1.3em;
+    color: #2b6cb0;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.upload-subtext {
+    color: #a0aec0;
+    font-size: 0.95em;
+}
+
+#fileInput {
+    display: none;
+}
+
+.message {
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: none;
+    font-weight: 500;
+}
+
+.message.active {
+    display: block;
+}
+
+.error {
+    background: #fed7d7;
+    color: #742a2a;
+    border-left: 4px solid #fc8181;
+}
+
+.success {
+    background: #9ae6b4;
+    color: #22543d;
+    border-left: 4px solid #48bb78;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    display: none;
+}
+
+.loading.active {
+    display: block;
+}
+
+.spinner {
+    border: 5px solid #e2e8f0;
+    border-top: 5px solid #667eea;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading p {
+    color: #4a5568;
+    font-size: 1.1em;
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 15px 40px;
+    font-size: 1.05em;
+    font-weight: 600;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #2b6cb0 0%, #1a365d 100%);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(43, 108, 176, 0.4);
+}
+
+.btn-secondary {
+    background: white;
+    color: #2b6cb0;
+    border: 2px solid #2b6cb0;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #2b6cb0;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.results-container {
+    margin-top: 50px;
+}
+
+.results-title {
+    text-align: center;
+    color: #2d3748;
+    font-size: 2em;
+    margin-bottom: 30px;
+}
+
+/* Selected files list */
+.selected-files {
+    background: #ebf8ff;
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+.selected-files h4 {
+    color: #2b6cb0;
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.selected-files ul {
+    list-style: none;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.selected-files li {
+    padding: 5px 0;
+    color: #4a5568;
+    font-size: 0.95em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.selected-files li:last-child {
+    border-bottom: none;
+}
+
+/* Results grid for multiple images */
+.results-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.result-card {
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.result-filename {
+    color: #1a365d;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3182ce;
+}
+
+.result-images {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .result-images {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.result-image-box {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.result-label {
+    display: block;
+    color: #2b6cb0;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.tumor-status {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-top: 15px;
+    font-size: 0.95em;
+}
+
+.tumor-detected {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.tumor-not-detected {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.result-image-box img {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.images-grid {
+    display:2b6cb0
+    grid-template-columns: 1fr;
+    gap: 30px;
+}
+
+@media (min-width: 900px) {
+    .images-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.image-card {
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.image-card h3 {
+    color: #667eea;
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.image-wrapper {
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    min-height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-wrapper img {
+    width: 100%;
+    height: auto;
+    min-height: 350px;
+    max-height: 600px;
+    border-radius: 8px;
+    object-fit: contain;
+    display: block;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px solid #e2e8f0;
+    color: #718096;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 2em;
+    }
+    
+    .upload-area {
+        padding: 40px 15px;
+    }
+    
+    .buttons-container {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 
 class SegmentationResult(BaseModel):
     """Result for a single brain MRI segmentation"""
@@ -9,16 +9,4 @@ class SegmentationResult(BaseModel):
     overlay_url: Optional[str]     
     width: int
     height: int
-    has_tumor: bool              
-
-
-class MultipleSegmentationResponse(BaseModel):
-    """Response for multiple MRI segmentation"""
-    results: List[SegmentationResult]
-
-
-class BatchSubmissionResponse(BaseModel):
-    """Response for async batch processing submission"""
-    session_id: str
-    task_ids: List[str]
-    message: str
+    has_tumor: bool

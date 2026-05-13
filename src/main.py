@@ -2,11 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from routes import data_router, base_router, websocket_router
+from routes import data_router, base_router
 import os
 import logging
 from datetime import datetime, timezone
-from utils.websocket_manager import manager
 import uvicorn
 
 # Configure logging
@@ -46,7 +45,6 @@ async def serve_homepage():
 
 app.include_router(base_router)
 app.include_router(data_router)
-app.include_router(websocket_router)
 
 @app.on_event("startup")
 async def startup_event():
@@ -65,8 +63,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "version": "1.0.0",
-        "websocket_enabled": True
+        "version": "1.0.0"
     }
 
 if __name__ == "__main__":

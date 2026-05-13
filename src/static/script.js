@@ -191,38 +191,39 @@ const updateTaskProgress = (taskId, taskData) => {
     }
 };
 
-const handleTaskCompletion = (taskId, result) => {
-    const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-    if (taskElement) {
-        const resultCard = document.createElement('div');
-        resultCard.className = 'result-card';
-        resultCard.innerHTML = `
-            <h3 class="result-filename">🩻 ${result.filename} 
-                ${result.has_tumor 
-                    ? '<span class="tumor-status tumor-detected">⚠️ Tumor Detected</span>'
-                    : '<span class="tumor-status tumor-not-detected">✅ No Tumor Detected</span>'
-                }
-            </h3>
-            <div class="result-images">
-                <div class="result-image-box">
-                    <span class="result-label">Original MRI</span>
-                    <img src="${result.original_image_url}" alt="Original MRI" />
-                </div>
-                <div class="result-image-box">
-                    <span class="result-label">Segmentation Mask</span>
-                    <img src="${result.mask_url}" alt="Segmentation Mask" />
-                </div>
-                ${result.overlay_url ? `
-                <div class="result-image-box">
-                    <span class="result-label">Overlay</span>
-                    <img src="${result.overlay_url}" alt="Overlay" />
-                </div>
-                ` : ''}
+const renderResultCard = (result) => {
+    const resultCard = document.createElement('div');
+    resultCard.className = 'result-card';
+    resultCard.innerHTML = `
+        <h3 class="result-filename">🩻 ${result.filename} 
+            ${result.has_tumor 
+                ? '<span class="tumor-status tumor-detected">⚠️ Tumor Detected</span>'
+                : '<span class="tumor-status tumor-not-detected">✅ No Tumor Detected</span>'
+            }
+        </h3>
+        <div class="result-images">
+            <div class="result-image-box">
+                <span class="result-label">Original MRI</span>
+                <img src="${result.original_image_url}" alt="Original MRI" />
             </div>
-        `;
-        
-        resultsGrid.appendChild(resultCard);
-    }
+            <div class="result-image-box">
+                <span class="result-label">Segmentation Mask</span>
+                <img src="${result.mask_url}" alt="Segmentation Mask" />
+            </div>
+            ${result.overlay_url ? `
+            <div class="result-image-box">
+                <span class="result-label">Overlay</span>
+                <img src="${result.overlay_url}" alt="Overlay" />
+            </div>
+            ` : ''}
+        </div>
+    `;
+    
+    resultsGrid.appendChild(resultCard);
+};
+
+const handleTaskCompletion = (taskId, result) => {
+    renderResultCard(result);
 };
 
 processBtn.addEventListener('click', async () => {

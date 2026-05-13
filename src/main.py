@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from routes import data_router, base_router, websocket_router
 import os
 import logging
+from datetime import datetime, timezone
 from utils.websocket_manager import manager
 import uvicorn
 
@@ -29,6 +30,15 @@ os.makedirs(output_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 app.mount("/output", StaticFiles(directory=output_dir), name="output")
 
+# Add CORS middleware before routes
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Serve the main page
 @app.get("/")
 async def serve_homepage():
@@ -37,14 +47,6 @@ async def serve_homepage():
 app.include_router(base_router)
 app.include_router(data_router)
 app.include_router(websocket_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 @app.on_event("startup")
 async def startup_event():
@@ -62,7 +64,7 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "timestamp": "2024-01-01T00:00:00Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "version": "1.0.0",
         "websocket_enabled": True
     }

@@ -14,27 +14,71 @@ def base64_to_numpy(b64_string: str) -> np.ndarray:
     return image
 
 
+def _load_image_from_result(result: Dict[str, Any], base64_key: str, url_key: str, output_dir: str = None) -> Optional[np.ndarray]:
+    """Load an image from a result dict, supporting both base64 and URL/file-path formats.
+    
+    Args:
+        result: Segmentation result dict
+        base64_key: Key for base64-encoded image data (e.g., 'original_image')
+        url_key: Key for URL/file-path image data (e.g., 'original_image_url')
+        output_dir: Base directory to resolve relative URL paths against
+        
+    Returns:
+        Loaded image as numpy array, or None if not found
+    """
+    # Try base64 format first
+    if result.get(base64_key):
+        return base64_to_numpy(result[base64_key])
+    
+    # Try URL/file-path format
+    if result.get(url_key):
+        url_path = result[url_key]
+        
+        # If it's a relative URL (e.g., /output/image.png), resolve to filesystem path
+        if url_path.startswith("/output/") and output_dir:
+            file_path = os.path.join(output_dir, os.path.basename(url_path))
+        elif os.path.isabs(url_path):
+            file_path = url_path
+        else:
+            # Try as relative path from project output directory
+            src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            file_path = os.path.join(src_dir, "assets", "output", os.path.basename(url_path))
+        
+        if os.path.exists(file_path):
+            return cv2.imread(file_path)
+    
+    return None
+
+
 def visualize_segmentation(
     result: Dict[str, Any],
     save_path: Optional[str] = None,
     show: bool = True,
-    figsize: tuple = (15, 5)
+    figsize: tuple = (15, 5),
+    output_dir: Optional[str] = None
 ) -> Optional[str]:
     """
     Visualize brain MRI segmentation result.
     
     Args:
-        result: Dict with original_image, mask, overlay (base64), width, height, has_tumor
+        result: Dict with image data. Supports both base64 keys (original_image, mask, overlay)
+                and URL keys (original_image_url, mask_url, overlay_url) from the web API.
         save_path: Optional path to save the visualization
         show: Whether to display the plot
         figsize: Figure size for matplotlib
+        output_dir: Base directory to resolve URL paths. Defaults to project assets/output.
         
     Returns:
         Path to saved image if save_path is provided, else None
     """
-    # Decode images from base64
-    original = base64_to_numpy(result["original_image"])
-    mask = base64_to_numpy(result["mask"])
+    # Load images from result dict (supports both base64 and URL formats)
+    original = _load_image_from_result(result, "original_image", "original_image_url", output_dir)
+    mask = _load_image_from_result(result, "mask", "mask_url", output_dir)
+    
+    if original is None:
+        raise ValueError("Could not load original image from result. Provide either 'original_image' (base64) or 'original_image_url'.")
+    if mask is None:
+        raise ValueError("Could not load mask from result. Provide either 'mask' (base64) or 'mask_url'.")
     
     # Convert BGR to RGB for matplotlib
     original_rgb = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
@@ -53,8 +97,8 @@ def visualize_segmentation(
     axes[1].axis("off")
     
     # Overlay
-    if result.get("overlay"):
-        overlay = base64_to_numpy(result["overlay"])
+    overlay = _load_image_from_result(result, "overlay", "overlay_url", output_dir)
+    if overlay is not None:
         overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
         axes[2].imshow(overlay_rgb)
     else:
@@ -107,7 +151,7 @@ def visualize_multiple_segmentations(
         if output_dir:
             save_path = os.path.join(output_dir, f"segmentation_{idx}.png")
         
-        path = visualize_segmentation(result, save_path=save_path, show=show)
+        path = visualize_segmentation(result, save_path=save_path, show=show, output_dir=output_dir)
         if path:
             saved_paths.append(path)
     
@@ -116,43 +160,53 @@ def visualize_multiple_segmentations(
 
 def save_mask_image(
     result: Dict[str, Any],
-    save_path: str
+    save_path: str,
+    output_dir: Optional[str] = None
 ) -> str:
     """
     Save just the predicted mask as an image file.
     
     Args:
-        result: Dict with mask (base64)
+        result: Dict with mask data (base64 or URL)
         save_path: Path to save the mask image
+        output_dir: Base directory to resolve URL paths
         
     Returns:
         Path to saved mask image
     """
-    mask = base64_to_numpy(result["mask"])
+    mask = _load_image_from_result(result, "mask", "mask_url", output_dir)
+    if mask is None:
+        raise ValueError("Could not load mask from result.")
     cv2.imwrite(save_path, mask)
     return save_path
 
 
 def save_overlay_image(
     result: Dict[str, Any],
-    save_path: str
+    save_path: str,
+    output_dir: Optional[str] = None
 ) -> str:
     """
     Save the overlay visualization as an image file.
     
     Args:
-        result: Dict with overlay or original_image and mask (base64)
+        result: Dict with overlay or original_image and mask data (base64 or URL)
         save_path: Path to save the overlay image
+        output_dir: Base directory to resolve URL paths
         
     Returns:
         Path to saved overlay image
     """
-    if result.get("overlay"):
-        overlay = base64_to_numpy(result["overlay"])
-    else:
+    overlay = _load_image_from_result(result, "overlay", "overlay_url", output_dir)
+    
+    if overlay is None:
         # Create overlay manually
-        original = base64_to_numpy(result["original_image"])
-        mask = base64_to_numpy(result["mask"])
+        original = _load_image_from_result(result, "original_image", "original_image_url", output_dir)
+        mask = _load_image_from_result(result, "mask", "mask_url", output_dir)
+        
+        if original is None or mask is None:
+            raise ValueError("Could not load original image and mask to create overlay.")
+        
         mask_gray = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY) if len(mask.shape) == 3 else mask
         
         # Create red overlay for tumor
@@ -162,4 +216,5 @@ def save_overlay_image(
     
     cv2.imwrite(save_path, overlay)
     return save_path
+
 

@@ -1,6 +1,7 @@
 import torch
 import os
 import cv2
+import base64
 import numpy as np
 from typing import List, Optional, Union, Dict, Any
 from .unet import UNet
@@ -57,7 +58,7 @@ def preprocess_image(image: np.ndarray) -> tuple[torch.Tensor, tuple[int, int]]:
 def numpy_to_base64(image: np.ndarray) -> str:
     """Convert numpy array to base64 encoded PNG string."""
     _, buffer = cv2.imencode('.png', image)
-    return buffer
+    return base64.b64encode(buffer).decode('utf-8')
 
 
 def save_image(image: np.ndarray, filename: str) -> str:

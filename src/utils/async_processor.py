@@ -1,11 +1,15 @@
 import asyncio
 import uuid
 import time
+import os
+import logging
 from typing import Dict, List, Optional, Any, Callable
 from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 import json
+
+logger = logging.getLogger(__name__)
 
 
 class TaskStatus(Enum):
@@ -47,6 +51,7 @@ class BatchProcessor:
         self.active_tasks: Dict[str, asyncio.Task] = {}
         self.semaphore = asyncio.Semaphore(max_concurrent_tasks)
         self._running = False
+        self._processing_task: Optional[asyncio.Task] = None
     
     async def add_task(self, filename: str, file_path: str, priority: TaskPriority = TaskPriority.NORMAL) -> str:
         """Add a new processing task to the queue"""
@@ -66,8 +71,9 @@ class BatchProcessor:
         # Sort queue by priority
         self.task_queue.sort(key=lambda tid: self.tasks[tid].priority.value, reverse=True)
         
+        # Launch processing loop as a background task (non-blocking)
         if not self._running:
-            await self._start_processing()
+            self._processing_task = asyncio.create_task(self._start_processing())
         
         return task_id
     
@@ -116,11 +122,19 @@ class BatchProcessor:
         return completed_count
     
     async def _start_processing(self):
-        """Start the processing loop"""
+        """Start the processing loop (runs as a background task)"""
         self._running = True
-        while self.task_queue and self._running:
-            await self._process_queue()
-            await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
+        try:
+            while self._running:
+                if not self.task_queue:
+                    # No more tasks — stop the loop
+                    break
+                await self._process_queue()
+                await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
+        except asyncio.CancelledError:
+            logger.info("Processing loop cancelled")
+        finally:
+            self._running = False
     
     async def _process_queue(self):
         """Process tasks in the queue"""
@@ -148,38 +162,59 @@ class BatchProcessor:
             async_task = asyncio.create_task(self._process_task(task_id))
             self.active_tasks[task_id] = async_task
             
-            # Add callback for completion
-            async_task.add_done_callback(lambda t, tid=task_id: self._task_completed(tid))
+            # Use ensure_future to properly schedule the async completion handler
+            async_task.add_done_callback(
+                lambda t, tid=task_id: asyncio.ensure_future(self._task_completed(tid))
+            )
     
     async def _process_task(self, task_id: str):
-        """Process a single task"""
+        """Process a single task using the actual segmentation model"""
         task = self.tasks[task_id]
         
         try:
-            # Simulate progress updates
-            for progress in [20, 40, 60, 80, 100]:
-                task.progress = progress
-                await self._update_progress()
-                await asyncio.sleep(0.5)  # Simulate processing time
+            # Import here to avoid circular imports
+            from models import segment_image
             
-            # Mock processing result
-            task.result = {
-                "filename": task.filename,
-                "status": "completed",
-                "message": f"Successfully processed {task.filename}",
-                "processed_at": datetime.now().isoformat()
-            }
+            # Update progress: starting
+            task.progress = 10
+            await self._update_progress()
+            
+            # Run the actual segmentation in a thread pool to avoid blocking the event loop
+            loop = asyncio.get_event_loop()
+            task.progress = 30
+            await self._update_progress()
+            
+            result = await loop.run_in_executor(
+                None,
+                lambda: segment_image(task.file_path, filename=task.filename, return_overlay=True)
+            )
+            
+            task.progress = 90
+            await self._update_progress()
+            
+            task.result = result
             task.status = TaskStatus.COMPLETED
+            task.progress = 100
             task.completed_at = datetime.now()
+            
+            await self._update_progress()
             
         except asyncio.CancelledError:
             task.status = TaskStatus.CANCELLED
             task.completed_at = datetime.now()
             raise
         except Exception as e:
+            logger.error(f"Task {task_id} failed: {e}")
             task.status = TaskStatus.FAILED
             task.error = str(e)
             task.completed_at = datetime.now()
+        finally:
+            # Clean up the temporary file after processing
+            if task.file_path and os.path.exists(task.file_path):
+                try:
+                    os.remove(task.file_path)
+                except Exception as e:
+                    logger.warning(f"Failed to remove temp file {task.file_path}: {e}")
     
     async def _task_completed(self, task_id: str):
         """Handle task completion"""
@@ -212,11 +247,17 @@ class BatchProcessor:
                     for task in self.tasks.values()
                 ]
             }
-            await self.progress_callback(status)
+            try:
+                await self.progress_callback(status)
+            except Exception as e:
+                logger.warning(f"Failed to send progress update: {e}")
     
     async def stop(self):
         """Stop the processor"""
         self._running = False
+        # Cancel the processing loop
+        if self._processing_task and not self._processing_task.done():
+            self._processing_task.cancel()
         # Cancel all active tasks
         for task_id in list(self.active_tasks.keys()):
             await self.cancel_task(task_id)

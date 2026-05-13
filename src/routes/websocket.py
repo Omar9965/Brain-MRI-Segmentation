@@ -41,8 +41,8 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         # Keep connection alive and handle incoming messages
         while True:
             try:
-                # Wait for incoming message with timeout
-                data = await websocket.receive_text(timeout=30.0)
+                # Wait for incoming message with timeout using asyncio.wait_for
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
                 message = json.loads(data)
                 
                 if message.get("type") == "get_status":

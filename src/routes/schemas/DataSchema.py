@@ -15,3 +15,10 @@ class SegmentationResult(BaseModel):
 class MultipleSegmentationResponse(BaseModel):
     """Response for multiple MRI segmentation"""
     results: List[SegmentationResult]
+
+
+class BatchSubmissionResponse(BaseModel):
+    """Response for async batch processing submission"""
+    session_id: str
+    task_ids: List[str]
+    message: str

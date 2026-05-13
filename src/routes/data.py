@@ -5,7 +5,7 @@ import shutil
 import uuid
 import time
 from controllers import DataController
-from routes.schemas.DataSchema import SegmentationResult, MultipleSegmentationResponse
+from routes.schemas.DataSchema import SegmentationResult, MultipleSegmentationResponse, BatchSubmissionResponse
 from models import segment_image, segment_multiple_images
 from utils.async_processor import BatchProcessor, TaskPriority
 from utils.websocket_manager import manager
@@ -88,7 +88,7 @@ async def segment_single_mri(
             os.remove(temp_path)
 
 
-@router.post("/segment-multiple", response_model=MultipleSegmentationResponse)
+@router.post("/segment-multiple", response_model=BatchSubmissionResponse)
 async def segment_multiple_mri(
     files: List[UploadFile] = File(...),
     background_tasks: BackgroundTasks = None
@@ -147,13 +147,11 @@ async def segment_multiple_mri(
         }
         
     except Exception as e:
+        # On error, clean up temp files since the processor won't handle them
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
         await manager.send_error(f"Error in batch processing: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error in batch processing: {str(e)}")
-    finally:
-        # Clean up temporary directory
-        if os.path.exists(temp_dir):
-            import shutil
-            shutil.rmtree(temp_dir)
 
 
 @router.get("/segment-status/{task_id}")
@@ -237,83 +235,3 @@ async def get_batch_status():
             for task in tasks
         ]
     }
-        # Run segmentation with original filename
-        result = segment_image(temp_path, filename=base_filename, return_overlay=True)
-        
-        return result
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Segmentation failed: {str(e)}"
-        )
-    
-    finally:
-        # Cleanup temporary file
-        if temp_path and os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except Exception as e:
-                print(f"Failed to remove temp file {temp_path}: {str(e)}")
-
-
-@router.post("/segment-multiple", response_model=MultipleSegmentationResponse)
-async def segment_multiple_mris(files: List[UploadFile] = File(...)):
-    """
-    Upload multiple brain MRI images and perform tumor segmentation on all.
-    
-    Args:
-        files: List of image files (jpg, png, tiff, jpeg)
-        
-    Returns:
-        MultipleSegmentationResponse with URLs for all segmented images
-    """
-    is_valid, message = await data_controller.validate_images(files)
-    
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=message)
-    
-    temp_paths = []
-    images_with_filenames = []
-    
-    try:
-        # Ensure upload directory exists
-        os.makedirs(data_controller.file_dir, exist_ok=True)
-        
-        # Save uploaded files temporarily
-        for file in files:
-            # Get original filename without extension
-            original_filename = data_controller.get_filename(file.filename)
-            base_filename = os.path.splitext(original_filename)[0]
-            
-            random_string = data_controller.generate_random_string()
-            ext = file.filename.split('.')[-1].lower()
-            temp_filename = f"{random_string}.{ext}"
-            temp_path = os.path.join(data_controller.file_dir, temp_filename)
-            
-            # Save file
-            with open(temp_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-            
-            temp_paths.append(temp_path)
-            images_with_filenames.append((temp_path, base_filename))
-        
-        # Run segmentation on all uploaded images with filenames
-        result = segment_multiple_images(images_with_filenames, return_overlay=True)
-        
-        return result
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Segmentation failed: {str(e)}"
-        )
-    
-    finally:
-        # Cleanup temporary files
-        for temp_path in temp_paths:
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except Exception as e:
-                    print(f"Failed to remove temp file {temp_path}: {str(e)}")

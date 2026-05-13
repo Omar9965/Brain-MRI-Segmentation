@@ -139,21 +139,21 @@ processBtn.addEventListener('click', async () => {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.detail || \`Failed to process \${file.name}\`);
+            throw new Error(errorData.detail || `Failed to process ${file.name}`);
         }
 
         const result = await response.json();
         handleTaskCompletion('single', result);
 
         imagesContainer.classList.remove('hidden');
-        showMessage(false, \`✅ Successfully processed MRI scan!\`);
+        showMessage(false, `✅ Successfully processed MRI scan!`);
         
         setTimeout(() => {
             imagesContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
 
     } catch (error) {
-        showMessage(true, \`❌ Error: \${error.message}\`);
+        showMessage(true, `❌ Error: ${error.message}`);
     } finally {
         loading.classList.remove('active');
         processBtn.disabled = false;

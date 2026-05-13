@@ -195,6 +195,158 @@ h1 {
     margin-bottom: 30px;
 }
 
+/* Progress tracking styles */
+.progress-section {
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.progress-section h3 {
+    color: #2d3748;
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.progress-overview {
+    margin-bottom: 20px;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.stat-item {
+    background: #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.progress-bar {
+    background: #e2e8f0;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #48bb78, #38a169);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.progress-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.task-item {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    border-left: 4px solid #3182ce;
+}
+
+.task-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.task-name {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.task-status {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.task-status.pending {
+    background: #fef5e7;
+    color: #d69e2e;
+}
+
+.task-status.processing {
+    background: #bee3f8;
+    color: #2b6cb0;
+}
+
+.task-status.completed {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.task-status.failed {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.task-progress-bar {
+    margin-bottom: 10px;
+}
+
+.task-progress {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e2e8f0;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.task-progress::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3182ce;
+    cursor: pointer;
+}
+
+.task-progress::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3182ce;
+    cursor: pointer;
+}
+
+.progress-text {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 0.9em;
+    color: #4a5568;
+    min-width: 45px;
+}
+
+.task-time {
+    font-size: 0.8em;
+    color: #718096;
+}
+
+.progress-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
 /* Selected files list */
 .selected-files {
     background: #ebf8ff;
@@ -381,5 +533,14 @@ h1 {
     .btn {
         width: 100%;
         justify-content: center;
+    }
+    
+    .progress-stats {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .result-images {
+        grid-template-columns: 1fr;
     }
 }

@@ -3,34 +3,43 @@ import os
 import cv2
 import base64
 import numpy as np
-from typing import List, Optional, Union, Dict, Any
-from .unet import UNet
+from typing import Optional, Union, Dict, Any
+from .unet import model as segmentation_model
 
 
 # Paths
 BEST_MODEL_PATH = os.path.join(os.path.dirname(__file__), "best_model.pth")
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "output")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# ImageNet normalization constants (matching EfficientNet-B7 pretrained encoder)
+IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+IMAGENET_STD  = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+
 # Global model instance (lazy loading)
-_model: Optional[UNet] = None
+_model = None
 
 
-def load_model(model_path: str = BEST_MODEL_PATH) -> UNet:
-    """Load the U-Net model with trained weights."""
+def load_model(model_path: str = BEST_MODEL_PATH):
+    """Load the segmentation model with trained weights."""
     global _model
     if _model is None:
-        _model = UNet(n_classes=1, use_cbam=True)
+        _model = segmentation_model
         _model.load_state_dict(torch.load(model_path, map_location=DEVICE))
         _model.to(DEVICE)
         _model.eval()
     return _model
 
 
-
-
-def preprocess_image(image: np.ndarray) -> tuple[torch.Tensor, tuple[int, int]]:
-    """Preprocess image for model inference."""
+def preprocess_image(image: np.ndarray) -> tuple:
+    """Preprocess image for model inference.
+    
+    Pipeline:
+        1. Convert to RGB
+        2. Store original size
+        3. Resize to 256×256
+        4. Normalize to [0,1] then apply ImageNet mean/std
+        5. Convert HWC → CHW tensor
+    """
     # Ensure RGB format
     if len(image.shape) == 2:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
@@ -45,9 +54,9 @@ def preprocess_image(image: np.ndarray) -> tuple[torch.Tensor, tuple[int, int]]:
     # Resize to expected input size (256x256)
     image = cv2.resize(image, (256, 256))
     
-    # Normalize (same as training: mean=0.5, std=0.5)
+    # Normalize: scale to [0,1] then apply ImageNet mean/std
     image = image.astype(np.float32) / 255.0
-    image = (image - 0.5) / 0.5
+    image = (image - IMAGENET_MEAN) / IMAGENET_STD
     
     # Convert to tensor [C, H, W]
     image = torch.from_numpy(image).permute(2, 0, 1).float()
@@ -59,14 +68,6 @@ def numpy_to_base64(image: np.ndarray) -> str:
     """Convert numpy array to base64 encoded PNG string."""
     _, buffer = cv2.imencode('.png', image)
     return base64.b64encode(buffer).decode('utf-8')
-
-
-def save_image(image: np.ndarray, filename: str) -> str:
-    """Save image to output directory and return the URL path."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    filepath = os.path.join(OUTPUT_DIR, filename)
-    cv2.imwrite(filepath, image)
-    return f"/output/{filename}"
 
 
 def create_overlay(original: np.ndarray, mask: np.ndarray, alpha: float = 0.4) -> np.ndarray:
@@ -83,25 +84,26 @@ def create_overlay(original: np.ndarray, mask: np.ndarray, alpha: float = 0.4) -
     return overlay
 
 
-
-
 def segment_image(
     image: Union[str, np.ndarray],
     filename: str = "image",
-    model: Optional[UNet] = None,
+    model=None,
     return_overlay: bool = True
 ) -> Dict[str, Any]:
     """
     Segment a single brain MRI image.
     
+    Returns base64-encoded images (no files saved to disk).
+    The images persist in memory only while the user is on the page.
+    
     Args:
         image: Either a file path (str) or numpy array (BGR format)
-        filename: Original filename (without extension) for output naming
+        filename: Original filename (without extension) for display
         model: Optional pre-loaded model instance
         return_overlay: Whether to include overlay visualization
     
     Returns:
-        Dict with URLs to saved images, dimensions, and tumor detection status
+        Dict with base64 data URIs for images, dimensions, and tumor detection status
     """
     # Load model if not provided
     if model is None:
@@ -121,10 +123,10 @@ def segment_image(
     input_tensor, _ = preprocess_image(original_image)
     input_tensor = input_tensor.unsqueeze(0).to(DEVICE)
     
-    # Inference
+    # Inference — model already applies sigmoid internally
     with torch.no_grad():
         output = model(input_tensor)
-        pred_mask = (torch.sigmoid(output) > 0.5).float()
+        pred_mask = (output > 0.5).float()
     
     # Convert mask to numpy
     mask_np = pred_mask.squeeze().cpu().numpy()
@@ -136,52 +138,22 @@ def segment_image(
     # Check if tumor is detected
     has_tumor = bool(np.any(mask_resized > 0))
     
-    # Generate unique suffix for this segmentation
-    import time
-    timestamp = int(time.time() * 1000)
-    base_name = f"{filename}_{timestamp}"
+    # Encode images as base64 data URIs (no disk writes)
+    original_b64 = f"data:image/png;base64,{numpy_to_base64(original_image)}"
+    mask_b64 = f"data:image/png;base64,{numpy_to_base64(mask_resized)}"
     
-    # Save images to output directory
-    original_url = save_image(original_image, f"{base_name}_original.png")
-    mask_url = save_image(mask_resized, f"{base_name}_mask.png")
-    
-    # Create and save overlay if requested
-    overlay_url = None
+    # Create and encode overlay if requested
+    overlay_b64 = None
     if return_overlay:
         overlay = create_overlay(original_image, mask_resized)
-        overlay_url = save_image(overlay, f"{base_name}_overlay.png")
+        overlay_b64 = f"data:image/png;base64,{numpy_to_base64(overlay)}"
     
     return {
         "filename": filename,
-        "original_image_url": original_url,
-        "mask_url": mask_url,
-        "overlay_url": overlay_url,
+        "original_image_url": original_b64,
+        "mask_url": mask_b64,
+        "overlay_url": overlay_b64,
         "width": original_w,
         "height": original_h,
         "has_tumor": has_tumor
     }
-
-
-def segment_multiple_images(
-    images: List[tuple[Union[str, np.ndarray], str]],
-    return_overlay: bool = True
-) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Segment multiple brain MRI images.
-    
-    Args:
-        images: List of tuples (image_path_or_array, filename)
-        return_overlay: Whether to include overlay visualizations
-    
-    Returns:
-        Dict with 'results' list containing segmentation results
-    """
-    model = load_model()
-    
-    results = []
-    for image, filename in images:
-        result = segment_image(image, filename=filename, model=model, return_overlay=return_overlay)
-        results.append(result)
-    
-    return {"results": results}
-

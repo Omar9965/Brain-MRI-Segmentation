@@ -1,11 +1,11 @@
-from utils import get_settings, Settings
+from utils import get_settings
 import os
 import random
 import string
 
 class BaseController:
     def __init__(self):
-        self.settings: Settings = get_settings()
+        self.settings = get_settings()
         self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.file_dir = os.path.join(self.base_dir, 'assets', 'files')
 

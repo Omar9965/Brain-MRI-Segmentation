@@ -1,14 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import List
 import os
 import shutil
-import uuid
-import time
 from controllers import DataController
 from routes.schemas.DataSchema import SegmentationResult
 from models import segment_image
-import json
-from datetime import datetime
 
 router = APIRouter(prefix="/api/v1", tags=["brain-mri-segmentation"])
 
@@ -18,7 +14,6 @@ data_controller = DataController()
 @router.post("/segment", response_model=SegmentationResult)
 async def segment_single_mri(
     file: UploadFile = File(...),
-    background_tasks: BackgroundTasks = None
 ):
     """
     Upload a single brain MRI image and perform tumor segmentation.
@@ -41,8 +36,7 @@ async def segment_single_mri(
         os.makedirs(data_controller.file_dir, exist_ok=True)
         
         # Get original filename without extension
-        original_filename = data_controller.get_filename(file.filename)
-        base_filename = os.path.splitext(original_filename)[0]
+        base_filename = os.path.splitext(file.filename)[0]
         
         # Save uploaded file temporarily
         random_string = data_controller.generate_random_string()

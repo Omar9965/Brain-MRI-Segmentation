@@ -14,20 +14,15 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Brain MRI Tumor Segmentation API",
-    description="U-Net based brain MRI tumor segmentation with CBAM attention - Enhanced with async processing and WebSocket support",
+    description="EfficientNet-B7 U-Net brain MRI tumor segmentation with attention gates",
     version="1.0.0"
 )
 
 # Mount static files
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-output_dir = os.path.join(os.path.dirname(__file__), "assets", "output")
-
-# Ensure output directory exists
-os.makedirs(output_dir, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
-app.mount("/output", StaticFiles(directory=output_dir), name="output")
 
 # Add CORS middleware before routes
 app.add_middleware(
@@ -46,16 +41,6 @@ async def serve_homepage():
 app.include_router(base_router)
 app.include_router(data_router)
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize background tasks on startup"""
-    logger.info("Starting Brain MRI Segmentation API...")
-    logger.info("WebSocket endpoints available at /ws/progress/{session_id}")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    logger.info("Shutting down Brain MRI Segmentation API...")
 
 @app.get("/health")
 async def health_check():

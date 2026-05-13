@@ -48,6 +48,7 @@ src/
 - Weights: Place `best_model.pth` in `src/models/Model/`
 
 Preprocessing (inference):
+
 - Converts BGR/GRAY to RGB
 - Resizes to 256×256
 - Normalizes to `[-1, 1]` via `(img/255-0.5)/0.5`
@@ -102,6 +103,7 @@ Accepted types: JPG/JPEG, PNG, TIFF (`.tif`, `.tiff`). Max size defaults to 500M
 ### cURL Examples
 
 Single image:
+
 ```bash
 curl -X POST \
   -F "file=@C:/path/to/your/mri.tif" \
@@ -109,6 +111,7 @@ curl -X POST \
 ```
 
 Multiple images:
+
 ```bash
 curl -X POST \
   -F "files=@C:/path/scan1.png" \
@@ -144,7 +147,7 @@ curl -X POST \
 
 ## Troubleshooting
 
-- Missing weights: Ensure `best_model.pth` exists in `src/models/Model/` you can download it from here "https://www.kaggle.com/code/omarmohamed89/brain-mri/output"
+- Missing weights: Ensure `best_model.pth` exists in `src/models/Model/` you can download it from here "https://www.kaggle.com/code/mahmoudabdulghany/brain-mri-segmentation-from-clahe-to-93-9-dice/output"
 - 500 errors on upload: Check file type/size and server logs
 - Images not visible: Confirm `/output` is mounted and URLs resolve
 - CUDA issues: App will automatically fall back to CPU
@@ -155,4 +158,5 @@ curl -X POST \
 
 - This repo includes a project-specific venv folder (`mri/`) for convenience; you may use your own environment instead.
 - The included Jupyter notebook for training is at `src/Notebook/brain-mri.ipynb` (dataset and training code reference).
+
 # Brain-MRI-Segmentation

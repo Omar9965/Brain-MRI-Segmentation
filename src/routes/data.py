@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/v1", tags=["brain-mri-segmentation"])
 data_controller = DataController()
 
 @router.post("/segment", response_model=SegmentationResult)
-async def segment_single_mri(
+async def segment_mri(
     file: UploadFile = File(...),
 ):
     """

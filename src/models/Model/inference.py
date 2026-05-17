@@ -3,7 +3,7 @@ import os
 import cv2
 import base64
 import numpy as np
-from typing import Optional, Union, Dict, Any
+from typing import Union, Dict, Any
 from .unet import model as segmentation_model
 
 

@@ -123,7 +123,7 @@ def segment_image(
     input_tensor, _ = preprocess_image(original_image)
     input_tensor = input_tensor.unsqueeze(0).to(DEVICE)
     
-    # Inference — model already applies sigmoid internally
+    # Inference 
     with torch.no_grad():
         output = model(input_tensor)
         pred_mask = (output > 0.5).float()
@@ -138,11 +138,11 @@ def segment_image(
     # Check if tumor is detected
     has_tumor = bool(np.any(mask_resized > 0))
     
-    # Encode images as base64 data URIs (no disk writes)
+    # Encode images as base64 data URIs 
     original_b64 = f"data:image/png;base64,{numpy_to_base64(original_image)}"
     mask_b64 = f"data:image/png;base64,{numpy_to_base64(mask_resized)}"
     
-    # Create and encode overlay if requested
+    # Create and encode overlay
     overlay_b64 = None
     if return_overlay:
         overlay = create_overlay(original_image, mask_resized)
